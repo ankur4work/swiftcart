@@ -1,0 +1,68 @@
+# SwiftCart — Shopify app configuration
+# https://shopify.dev/docs/apps/tools/cli/configuration
+#
+# client_id is a PLACEHOLDER until the app is created in the Partner dashboard.
+# When you have the real one, update it here AND in lib/shopify/app-identity.ts
+# (the /api/health probe compares the two and fails a deploy if they disagree).
+
+client_id = "REPLACE_WITH_CLIENT_ID"
+name = "SwiftCart"
+handle = "swiftcart"
+application_url = "https://swiftcart.live"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = false
+include_config_on_deploy = true
+
+[access_scopes]
+# Deliberately minimal. The floating cart bar is rendered entirely by the theme
+# app extension from Liquid + the Ajax Cart API, so it needs no product, order
+# or cart-transform access. The single scope is for the shop metafield that
+# mirrors subscription state to the storefront (lib/shopify/metafields.ts).
+#
+# Every extra scope is another thing App Store review asks you to justify, and
+# another permission prompt the merchant sees at install. Do not widen this
+# without a concrete need.
+scopes = "write_metafields"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [
+  "https://swiftcart.live/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2025-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/api/webhooks/app-uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app_subscriptions/update" ]
+  uri = "/api/webhooks/app-subscriptions-update"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request" ]
+  uri = "/api/webhooks/customers-data-request"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/redact" ]
+  uri = "/api/webhooks/customers-redact"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "shop/redact" ]
+  uri = "/api/webhooks/shop-redact"
+
+# Storefront fallback for the entitlement check. The theme extension reads the
+# shop metafield first and only calls this when the metafield is missing (fresh
+# install, or a metafield write that hasn't landed yet).
+[app_proxy]
+url = "https://swiftcart.live/api/proxy"
+subpath = "swiftcart"
+prefix = "apps"
+
+[pos]
+embedded = false

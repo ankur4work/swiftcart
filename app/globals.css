@@ -1,0 +1,261 @@
+/*
+ * Only two things live here: a reset thin enough not to fight Polaris, and the
+ * storefront preview.
+ *
+ * The preview is deliberately NOT built from Polaris components. It has to look
+ * like the merchant's shop, not like the Shopify admin — a Polaris Button
+ * rendered inside the preview would tell the merchant their cart bar uses
+ * admin styling, which is exactly the wrong impression. Everything under
+ * `.sc-preview` is hand-written and scoped so it cannot leak into the admin UI.
+ */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------------------------------------------------------------- preview */
+
+.sc-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f2f4f7;
+  border: 1px solid #d9dde3;
+  min-height: 380px;
+  /* Contains the fixed-positioned cart bar inside the card instead of letting
+     it escape to the real viewport. */
+  transform: translateZ(0);
+}
+
+.sc-preview__chrome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.sc-preview__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #d0d5dd;
+}
+
+.sc-preview__url {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #667085;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.sc-preview__page {
+  padding: 22px;
+}
+
+.sc-preview__hero {
+  height: 120px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e4e7ec 0%, #f2f4f7 100%);
+  margin-bottom: 16px;
+}
+
+.sc-preview__line {
+  height: 10px;
+  border-radius: 5px;
+  background: #e4e7ec;
+  margin-bottom: 10px;
+}
+
+.sc-preview__line--short {
+  width: 45%;
+}
+
+.sc-preview__line--medium {
+  width: 70%;
+}
+
+.sc-preview__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.sc-preview__tile {
+  height: 74px;
+  border-radius: 8px;
+  background: #e9ecf1;
+}
+
+/* The device frame the merchant is previewing for. Mobile narrows the stage so
+   the bar wraps the way it would on a phone. */
+.sc-preview--mobile .sc-preview__grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* ------------------------------------------------------- the cart bar itself */
+
+.sc-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.18);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.sc-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sc-bar__icon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.sc-bar__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sc-bar__count {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sc-bar__subtotal {
+  opacity: 0.85;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.sc-bar__cta {
+  flex-shrink: 0;
+  padding: 9px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: default;
+}
+
+/* --------------------------------------------------------- the FAB variant */
+
+.sc-fab {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.24);
+}
+
+.sc-fab--bottom_right {
+  right: 16px;
+  bottom: 16px;
+}
+.sc-fab--bottom_left {
+  left: 16px;
+  bottom: 16px;
+}
+.sc-fab--middle_right {
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.sc-fab--middle_left {
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.sc-fab__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.sc-fab__price {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.16);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* --------------------------------------------------------------- paywall */
+
+.sc-paywall-price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.sc-paywall-price__amount {
+  font-size: 40px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.sc-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 24, 40, 0.15);
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.sc-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sc-color-row input[type='color'] {
+  width: 40px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #c9cccf;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}

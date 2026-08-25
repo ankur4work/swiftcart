@@ -1,0 +1,15 @@
+# Normalise to LF in the repository. Checkouts on Windows still get CRLF for
+# ordinary text files via core.autocrlf.
+* text=auto
+
+# These are read by Linux inside the Docker image, where a CRLF line ending is
+# not cosmetic — the shell reads `#!/bin/sh\r` as an interpreter path that does
+# not exist and the container dies with "no such file or directory", naming a
+# file that is plainly there. Force LF regardless of platform.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker/Dockerfile text eol=lf
+*.liquid text eol=lf
+
+# Lockfiles are generated; keep them out of diffs and language stats.
+pnpm-lock.yaml linguist-generated=true -diff

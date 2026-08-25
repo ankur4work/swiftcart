@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.github
+.shopify
+.deploy
+extensions
+docs
+*.md
+!README.md
+.env
+.env.*
+*.tsbuildinfo
+Dockerfile
+docker-compose*.yml

@@ -1,0 +1,26 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyWebhookHmac } from '@/lib/shopify/hmac';
+import { logger } from '@/lib/logger';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+/**
+ * GDPR: erase a specific shopper's data.
+ *
+ * Nothing to erase — see the note in customers-data-request/route.ts for why
+ * this app stores no shopper data at all.
+ */
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  const raw = await req.text();
+
+  if (!verifyWebhookHmac(raw, req.headers.get('x-shopify-hmac-sha256'))) {
+    return NextResponse.json({ error: 'invalid hmac' }, { status: 401 });
+  }
+
+  logger.info(
+    { shop: req.headers.get('x-shopify-shop-domain') },
+    'customers/redact acknowledged — no customer data is stored by this app',
+  );
+  return NextResponse.json({ ok: true });
+}

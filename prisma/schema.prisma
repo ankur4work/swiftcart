@@ -1,0 +1,132 @@
+// SwiftCart — data model
+//
+// Deliberately small. The floating cart bar renders from the theme app
+// extension using Liquid + the Ajax Cart API, so nothing about a shopper's
+// cart is ever stored here. What we persist is: which store installed us,
+// their (encrypted, expiring) access token, their bar configuration, and an
+// audit trail of billing transitions.
+//
+// No customer PII is stored anywhere in this schema. That is what makes the
+// three mandatory GDPR webhooks a no-op ack rather than a data hunt.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Entitlement state. SwiftCart is paid-only — there is no free tier, so this
+/// is a two-state gate, not a plan ladder. NONE means the app renders nothing
+/// on the storefront and the admin shows the paywall.
+enum Entitlement {
+  NONE
+  ACTIVE
+}
+
+/// Which of the two floating cart treatments the merchant picked.
+enum BarDesign {
+  /// Full-width sticky bar pinned to the bottom of the viewport.
+  BAR
+  /// Compact circular floating action button.
+  BUTTON
+}
+
+/// Screen corner for the BUTTON design. Ignored when design = BAR.
+enum ButtonPosition {
+  BOTTOM_RIGHT
+  BOTTOM_LEFT
+  MIDDLE_RIGHT
+  MIDDLE_LEFT
+}
+
+model Store {
+  id           String  @id @default(cuid())
+  shopDomain   String  @unique
+  /// AES-256-GCM envelope from lib/crypto.ts — never a raw Shopify token.
+  accessToken  String
+  /// Shopify only issues expiring offline tokens now (~1h). Null would mean a
+  /// non-expiring token, which the Admin API rejects outright.
+  accessTokenExpiresAt DateTime?
+  scope        String
+
+  entitlement        Entitlement @default(NONE)
+  /// gid://shopify/AppSubscription/... — for support and audit, never for auth.
+  shopifyChargeId    String?
+  subscriptionStatus String?
+  subscriptionName   String?
+  currentPeriodEnd   DateTime?
+
+  installedAt       DateTime  @default(now())
+  uninstalledAt     DateTime?
+  /// Set when shop/redact arrives; a cleanup pass deletes the row after this.
+  scheduledRedactAt DateTime?
+
+  settings      CartBarSettings?
+  billingEvents BillingEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([uninstalledAt])
+  @@index([scheduledRedactAt])
+}
+
+/// Appearance and behaviour of the floating cart, one row per store.
+///
+/// These are mirrored into the theme app extension's block settings where the
+/// merchant edits them in the theme editor; this table is the source of truth
+/// for the app's own preview and for anything the extension reads over the
+/// app proxy.
+model CartBarSettings {
+  id      String @id @default(cuid())
+  storeId String @unique
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  design         BarDesign      @default(BAR)
+  buttonPosition ButtonPosition @default(BOTTOM_RIGHT)
+
+  showOnDesktop Boolean @default(true)
+  showOnMobile  Boolean @default(true)
+  /// Keep the bar off screen until there is at least one line item. Most
+  /// merchants want this; an always-visible empty cart bar reads as chrome.
+  hideWhenEmpty Boolean @default(true)
+
+  backgroundColor String @default("#111827")
+  textColor       String @default("#FFFFFF")
+  accentColor     String @default("#2563EB")
+  cornerRadius    Int    @default(12)
+
+  showItemCount Boolean @default(true)
+  showSubtotal  Boolean @default(true)
+  ctaLabel      String  @default("View cart")
+
+  /// CSS selector for the theme's own cart-drawer trigger. When set, SwiftCart
+  /// clicks it instead of navigating to /cart, so the merchant keeps their
+  /// theme's drawer. Empty = navigate to the cart page.
+  cartOpenSelector String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Append-only audit of billing transitions, written from the
+/// app_subscriptions/update webhook and on reinstall resets.
+model BillingEvent {
+  id      String @id @default(cuid())
+  storeId String
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  /// e.g. subscription_activated, subscription_cancelled, reinstall_reset
+  eventType       String
+  status          String?
+  shopifyChargeId String?
+  amount          String?
+  currencyCode    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([storeId, createdAt])
+}

@@ -1,0 +1,25 @@
+# Local development stack. Production runs on Coolify, which builds
+# docker/Dockerfile directly and supplies env vars itself — this file exists so
+# `pnpm docker:up` gives you a Postgres matching production without installing
+# one on the host.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: swiftcart-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: swiftcart
+      POSTGRES_PASSWORD: swiftcart
+      POSTGRES_DB: swiftcart
+    ports:
+      - '5433:5432'
+    volumes:
+      - swiftcart_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U swiftcart']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  swiftcart_pgdata:

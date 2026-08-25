@@ -1,0 +1,239 @@
+{% comment %}
+  SwiftCart — floating cart bar (app embed block).
+
+  Three things worth knowing before editing this file:
+
+  1. ENTITLEMENT IS CHECKED IN LIQUID, NOT JAVASCRIPT.
+     `shop.metafields.swiftcart.plan` is written by the app whenever the
+     subscription changes. When it says anything other than "active" this block
+     outputs NOTHING — no markup, no CSS, no JS. An unsubscribed store pays no
+     page-weight cost at all, and there is no flash of a cart bar that then
+     disappears.
+
+     The only case that reaches JavaScript is a blank metafield (fresh install,
+     or the definition could not be created), which falls back to one app-proxy
+     call. That is the exception, not the normal path.
+
+  2. NO INLINE <style> OR <script>.
+     Both live in assets/ and are served from the Shopify CDN, so they are
+     cached across page loads and across stores. Inlining them — which is what
+     the app this replaces did, to the tune of 800 lines — re-sends the same
+     bytes on every single page view and defeats caching entirely.
+
+  3. THE FIRST PAINT IS SERVER-RENDERED.
+     Item count and subtotal come from the `cart` Liquid object, already
+     present in the page. The bar is correct before any JavaScript runs;
+     assets/swiftcart.js only keeps it in sync as the cart changes.
+{% endcomment %}
+
+{%- liquid
+  assign sc_plan = shop.metafields.swiftcart.plan | default: '' | downcase
+  assign sc_known = false
+  if sc_plan == 'active' or sc_plan == 'none'
+    assign sc_known = true
+  endif
+-%}
+
+{%- comment -%}
+  Known and not active: render nothing whatsoever.
+{%- endcomment -%}
+{%- if sc_known and sc_plan != 'active' -%}
+  {%- comment -%} Not subscribed — SwiftCart renders nothing. {%- endcomment -%}
+{%- else -%}
+
+  {{ 'swiftcart.css' | asset_url | stylesheet_tag }}
+
+  {%- liquid
+    assign sc_radius = block.settings.corner_radius | default: 12
+    assign sc_cta = block.settings.cta_label | default: 'View cart'
+    assign sc_design = block.settings.design | default: 'bar'
+    assign sc_position = block.settings.button_position | default: 'bottom_right'
+  -%}
+
+  <div
+    class="swiftcart swiftcart--{{ sc_design }} swiftcart--{{ sc_position }}{% unless sc_known %} swiftcart--pending{% endunless %}"
+    id="swiftcart-root"
+    data-swiftcart
+    data-plan="{{ sc_plan }}"
+    data-design="{{ sc_design }}"
+    data-hide-when-empty="{{ block.settings.hide_when_empty }}"
+    data-show-desktop="{{ block.settings.show_on_desktop }}"
+    data-show-mobile="{{ block.settings.show_on_mobile }}"
+    data-cart-selector="{{ block.settings.cart_open_selector | escape }}"
+    data-money-format="{{ shop.money_format | escape }}"
+    data-status-url="{{ shop.url }}/apps/swiftcart/status"
+    data-cart-url="{{ routes.cart_url }}"
+    data-item-count="{{ cart.item_count }}"
+    style="
+      --swiftcart-bg: {{ block.settings.background_color }};
+      --swiftcart-fg: {{ block.settings.text_color }};
+      --swiftcart-accent: {{ block.settings.accent_color }};
+      --swiftcart-radius: {{ sc_radius }}px;
+      --swiftcart-radius-inner: {{ sc_radius | minus: 4 | at_least: 4 }}px;
+    "
+    {% if cart.item_count == 0 and block.settings.hide_when_empty %}
+      hidden
+    {% endif %}
+  >
+    <button class="swiftcart__hit" type="button" data-swiftcart-open aria-label="{{ sc_cta | escape }}">
+      <span class="swiftcart__left">
+        <span class="swiftcart__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.75 8.25h14.5l-.9 10.1a2.4 2.4 0 0 1-2.4 2.15H8.05a2.4 2.4 0 0 1-2.4-2.15Z" />
+            <path d="M8.5 8.25v-1.5a3.5 3.5 0 0 1 7 0v1.5" />
+          </svg>
+        </span>
+
+        {%- if sc_design == 'bar' -%}
+          <span class="swiftcart__meta">
+            {%- if block.settings.show_item_count -%}
+              <span class="swiftcart__count" data-swiftcart-count>
+                {{ cart.item_count }} {% if cart.item_count == 1 %}item{% else %}items{% endif %}
+              </span>
+            {%- endif -%}
+            {%- if block.settings.show_subtotal -%}
+              <span class="swiftcart__subtotal" data-swiftcart-subtotal>
+                {{- cart.items_subtotal_price | money -}}
+              </span>
+            {%- endif -%}
+          </span>
+        {%- else -%}
+          {%- if block.settings.show_item_count -%}
+            <span class="swiftcart__badge" data-swiftcart-badge>{{ cart.item_count }}</span>
+          {%- endif -%}
+          {%- if block.settings.show_subtotal -%}
+            <span class="swiftcart__pill" data-swiftcart-subtotal>
+              {{- cart.items_subtotal_price | money -}}
+            </span>
+          {%- endif -%}
+        {%- endif -%}
+      </span>
+
+      {%- if sc_design == 'bar' -%}
+        <span class="swiftcart__cta">{{ sc_cta }}</span>
+      {%- endif -%}
+    </button>
+  </div>
+
+  <script src="{{ 'swiftcart.js' | asset_url }}" defer></script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "SwiftCart",
+  "target": "body",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "select",
+      "id": "design",
+      "label": "Shape",
+      "options": [
+        { "value": "bar", "label": "Sticky bar" },
+        { "value": "button", "label": "Floating button" }
+      ],
+      "default": "bar"
+    },
+    {
+      "type": "select",
+      "id": "button_position",
+      "label": "Floating button position",
+      "info": "Only applies when the shape is set to Floating button.",
+      "options": [
+        { "value": "bottom_right", "label": "Bottom right" },
+        { "value": "bottom_left", "label": "Bottom left" },
+        { "value": "middle_right", "label": "Middle right" },
+        { "value": "middle_left", "label": "Middle left" }
+      ],
+      "default": "bottom_right"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#111827"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text and icon",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent",
+      "info": "Used for the button and the item count badge.",
+      "default": "#2563EB"
+    },
+    {
+      "type": "range",
+      "id": "corner_radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "Button label",
+      "default": "View cart"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_item_count",
+      "label": "Show item count",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_subtotal",
+      "label": "Show subtotal",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Visibility"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_on_mobile",
+      "label": "Show on mobile",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_on_desktop",
+      "label": "Show on desktop",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_when_empty",
+      "label": "Hide when the cart is empty",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Advanced",
+      "info": "SwiftCart opens your theme's cart drawer automatically on most themes. Only set this if your drawer doesn't open."
+    },
+    {
+      "type": "text",
+      "id": "cart_open_selector",
+      "label": "Cart drawer selector",
+      "info": "A CSS selector for your theme's cart button, e.g. .cart-drawer-toggle. Leave empty to go to the cart page."
+    }
+  ]
+}
+{% endschema %}

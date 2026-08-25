@@ -1,0 +1,236 @@
+/*
+ * SwiftCart — storefront styles.
+ *
+ * Every rule is scoped under .swiftcart and every custom property is namespaced
+ * --swiftcart-*, because this stylesheet lands on a page whose CSS we have
+ * never seen. A generic class name here would collide with a merchant's theme
+ * sooner or later, and the failure would show up on their storefront, not ours.
+ *
+ * Colours and radius come in as inline custom properties set by the Liquid from
+ * the merchant's block settings — the fallbacks below only apply if that
+ * somehow doesn't happen.
+ */
+
+.swiftcart {
+  --swiftcart-bg: #111827;
+  --swiftcart-fg: #ffffff;
+  --swiftcart-accent: #2563eb;
+  --swiftcart-radius: 12px;
+  --swiftcart-radius-inner: 8px;
+
+  position: fixed;
+  z-index: 2147483000; /* below Shopify's own overlays, above theme chrome */
+  box-sizing: border-box;
+  font-family: inherit;
+  /* The theme's own transitions must not apply to us. */
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.swiftcart[hidden] {
+  display: none !important;
+}
+
+.swiftcart *,
+.swiftcart *::before,
+.swiftcart *::after {
+  box-sizing: border-box;
+}
+
+/* Until JavaScript confirms entitlement (blank-metafield fallback only), keep
+   the bar out of the layout without collapsing it — so when it is confirmed it
+   appears in place rather than shifting content. */
+.swiftcart--pending {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.swiftcart__hit {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--swiftcart-fg);
+  background: var(--swiftcart-bg);
+  -webkit-tap-highlight-color: transparent;
+  text-align: left;
+}
+
+.swiftcart__hit:focus-visible {
+  outline: 2px solid var(--swiftcart-accent);
+  outline-offset: 3px;
+}
+
+.swiftcart__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.swiftcart__icon svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+/* ------------------------------------------------------------- sticky bar */
+
+.swiftcart--bar {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  /* Respect the home indicator on iOS rather than sitting under it. */
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.swiftcart--bar .swiftcart__hit {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--swiftcart-radius);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.18);
+}
+
+.swiftcart__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.swiftcart__count {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.swiftcart__subtotal {
+  font-size: 13px;
+  line-height: 1.2;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.swiftcart__cta {
+  flex-shrink: 0;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--swiftcart-fg);
+  background: var(--swiftcart-accent);
+  border-radius: var(--swiftcart-radius-inner);
+}
+
+@media (min-width: 750px) {
+  /* On desktop a full-bleed bar across a 1400px viewport is a lot of furniture
+     for one control, so it shrinks to the right-hand side. */
+  .swiftcart--bar {
+    left: auto;
+    right: 20px;
+    bottom: 20px;
+    max-width: 340px;
+  }
+}
+
+/* -------------------------------------------------------- floating button */
+
+.swiftcart--button .swiftcart__hit {
+  position: relative;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.24);
+}
+
+.swiftcart--button .swiftcart__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.swiftcart__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 11px;
+  color: var(--swiftcart-fg);
+  background: var(--swiftcart-accent);
+}
+
+.swiftcart__pill {
+  position: absolute;
+  bottom: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  border-radius: 10px;
+  color: var(--swiftcart-fg);
+  background: var(--swiftcart-accent);
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.18);
+}
+
+.swiftcart--bottom_right {
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.swiftcart--bottom_left {
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.swiftcart--middle_right {
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.swiftcart--middle_left {
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ------------------------------------------------------------- visibility */
+
+/* Driven by the merchant's per-device settings; the classes are applied by
+   swiftcart.js so the breakpoint lives in one place. */
+.swiftcart--hide-mobile {
+  display: none;
+}
+
+@media (min-width: 750px) {
+  .swiftcart--hide-mobile {
+    display: block;
+  }
+
+  .swiftcart--hide-desktop {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swiftcart {
+    transition: none;
+  }
+}
