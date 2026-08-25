@@ -27,7 +27,12 @@
 {% endcomment %}
 
 {%- liquid
-  assign sc_plan = shop.metafields.swiftcart.plan | default: '' | downcase
+  comment
+    `.value` rather than the metafield drop itself: the drop renders as its
+    value for text types, but only by way of to_s, and a missing metafield is
+    nil either way. Being explicit costs nothing and makes the nil case obvious.
+  endcomment
+  assign sc_plan = shop.metafields.swiftcart.plan.value | default: '' | downcase
   assign sc_known = false
   if sc_plan == 'active' or sc_plan == 'none'
     assign sc_known = true
@@ -47,11 +52,22 @@
     assign sc_radius = block.settings.corner_radius | default: 12
     assign sc_cta = block.settings.cta_label | default: 'View cart'
     assign sc_design = block.settings.design | default: 'bar'
-    assign sc_position = block.settings.button_position | default: 'bottom_right'
+
+    comment
+      The position class is emitted ONLY for the floating button. The sticky bar
+      pins itself with its own left/right/bottom rules, and layering a corner
+      class on top of those produces a bar anchored to three edges and one
+      corner at once.
+    endcomment
+    assign sc_position_class = ''
+    if sc_design == 'button'
+      assign sc_position = block.settings.button_position | default: 'bottom_right'
+      assign sc_position_class = 'swiftcart--' | append: sc_position
+    endif
   -%}
 
   <div
-    class="swiftcart swiftcart--{{ sc_design }} swiftcart--{{ sc_position }}{% unless sc_known %} swiftcart--pending{% endunless %}"
+    class="swiftcart swiftcart--{{ sc_design }} {{ sc_position_class }}{% unless sc_known %} swiftcart--pending{% endunless %}"
     id="swiftcart-root"
     data-swiftcart
     data-plan="{{ sc_plan }}"
