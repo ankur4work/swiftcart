@@ -88,6 +88,12 @@ Deploy credentials live in `.deploy/coolify.env`, which is gitignored.
 
 The extension renders from Liquid and the Ajax Cart API, so it needs no product, order or cart access. The single scope is for the entitlement metafield. Adding scopes means more App Store review questions and a scarier install prompt — don't widen it without a concrete need.
 
+## Known consideration: Polaris React
+
+The admin UI is built on `@shopify/polaris` v13.9.5 — the latest published version, and the same family the other apps here use. npm marks it deprecated: Shopify now points new admin work at **Polaris web components** instead.
+
+Nothing is broken and nothing blocks App Store submission — v13 is stable and widely deployed. But it is no longer maintained, so at some point the UI layer will want porting. That is a contained job: it touches `app/_components/` only. The storefront extension, billing, auth and data layers have no Polaris dependency at all.
+
 ## Data handling
 
 No shopper data is stored. No customer identifier, cart contents, or browsing event ever reaches this server — which is why the two customer GDPR webhooks are honest acknowledged no-ops rather than stubs. `shop/redact` deletes the store row outright.
