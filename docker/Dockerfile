@@ -6,10 +6,15 @@
 # and while it can be coaxed onto musl it is not worth the debugging when the
 # size difference is ~40MB on an image we deploy a handful of times a week.
 FROM node:20-bookworm-slim AS base
-# openssl is required at runtime by Prisma's query engine; ca-certificates for
-# outbound TLS to the Shopify Admin API.
+# openssl: required at runtime by Prisma's query engine.
+# ca-certificates: outbound TLS to the Shopify Admin API.
+# curl: NOT a convenience — Coolify runs its container health check by exec'ing
+#   curl (or wget) INSIDE this image, and node:20-bookworm-slim ships neither.
+#   Without it the app starts perfectly, answers /api/health perfectly, and the
+#   deploy still fails and rolls back with "New container is unhealthy" — the
+#   probe never ran at all. Removing curl silently breaks deploys.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && apt-get install -y --no-install-recommends openssl ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 # Pin the pnpm store to a known path so BuildKit cache mounts can target it
