@@ -74,8 +74,13 @@ COPY . .
 RUN pnpm prisma generate
 # A permission to grow, not a reservation: V8 defers aggressive GC until it
 # nears the ceiling, so setting this too high on a busy host gets the process
-# OOM-killed before it ever collects. 2048 is comfortable for this build.
-ENV NODE_OPTIONS=--max-old-space-size=2048
+# OOM-killed by the kernel before it ever collects.
+#
+# The deployment host runs ~80 containers, and 2048 was already too generous —
+# the first build died at the type-check phase with exit 255 and no message.
+# 1536 makes V8 collect sooner; if the build genuinely needs more it now fails
+# with an explicit JS heap error instead of a silent kill.
+ENV NODE_OPTIONS=--max-old-space-size=1536
 RUN pnpm next build
 
 # ---- runtime ----

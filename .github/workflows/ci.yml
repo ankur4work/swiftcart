@@ -1,0 +1,83 @@
+name: CI
+
+# This workflow is not optional decoration — it holds the type-safety guarantee
+# for this repo.
+#
+# `next build` normally type-checks and lints as part of the production build,
+# but the deployment host (a VPS carrying ~80 containers) OOM-kills that phase,
+# so next.config.mjs disables it there. GitHub's runners have the memory to do
+# it properly, so the check runs here instead, on every push.
+#
+# If this workflow is removed or allowed to stay red, nothing anywhere is
+# checking types before code reaches production.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The Prisma client is generated code that lib/ imports types from, so
+      # this has to happen before tsc or every `@prisma/client` import is an
+      # unresolved module.
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # Catches what tsc alone cannot: a route that fails to compile, a server
+      # component importing something client-only, a bad next.config.
+      #
+      # No secrets are provided on purpose — lib/env.ts returns a typed stub
+      # during phase-production-build precisely so a build needs none. If this
+      # step ever starts demanding a real secret, that stub has been bypassed
+      # and the Docker build will break the same way.
+      - name: Build
+        run: pnpm next build
+        env:
+          NODE_ENV: production
+
+  # Verifies the image the deployment host will actually build. Catches
+  # Dockerfile-level breakage (a bad COPY path, a missing stage) that the
+  # step above cannot see.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
