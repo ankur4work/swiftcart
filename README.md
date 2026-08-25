@@ -76,11 +76,13 @@ Then, in the Partner dashboard: create **one** plan at $30/month with **no free 
 
 ## Deployment
 
-Coolify builds `docker/Dockerfile`. Set the health check to `/api/health?strict=1`.
+Coolify builds `docker/Dockerfile` with the repo root as build context.
 
-Required env vars are listed in `.env.example`. Note that the Dockerfile declares them as build `ARG`s as well — Coolify passes env at build time, and `SHOPIFY_API_KEY` in particular is baked into the App Bridge script tag.
+Required env vars are listed in `.env.example`. Note that the Dockerfile declares them as build `ARG`s as well — Coolify passes env at build time, and `SHOPIFY_API_KEY` in particular is baked into the App Bridge script tag, so a runtime-only value leaves the embedded app with no key.
 
-Deploy credentials live in `.deploy/coolify.env`, which is gitignored.
+Health check: use `/api/health` until the app's real `client_id` and final domain are in place, then move to **`/api/health?strict=1`** so config drift fails the deploy instead of merely being logged. Running strict before then guarantees a rollback loop, because the placeholder identity cannot match.
+
+Deployment credentials, infrastructure IDs and the DNS cutover runbook live in `.deploy/`, which is gitignored — this repo is public, so none of that belongs here.
 
 ## Scopes
 
