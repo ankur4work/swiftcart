@@ -182,10 +182,31 @@ export function planSelectionUrl(shopDomain: string): string {
   return `https://admin.shopify.com/store/${storeHandle}/charges/${env.SHOPIFY_APP_HANDLE}/pricing_plans`;
 }
 
-/** What the paywall shows before a merchant has anything to read back. */
+/**
+ * What the paywall shows before a merchant has anything to read back.
+ *
+ * Formatted here rather than in the component so the amount/currency split
+ * stays an implementation detail of configuration — the UI just renders a
+ * string, the same way it renders the real price once one exists.
+ */
 export function displayPrice(): { price: string; interval: string; planName: string } {
+  const amount = env.SWIFTCART_DISPLAY_AMOUNT;
+  let price: string;
+  try {
+    price = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: env.SWIFTCART_DISPLAY_CURRENCY,
+      // A round monthly price reads better without ".00"; a 29.99 still needs it.
+      minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    }).format(amount);
+  } catch {
+    // An unrecognised currency code would otherwise throw and take the whole
+    // paywall down — degrade to "30 USD" instead.
+    price = `${amount} ${env.SWIFTCART_DISPLAY_CURRENCY}`;
+  }
+
   return {
-    price: env.SWIFTCART_DISPLAY_PRICE,
+    price,
     interval: env.SWIFTCART_DISPLAY_INTERVAL,
     planName: env.SWIFTCART_PLAN_NAME,
   };

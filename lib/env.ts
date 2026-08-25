@@ -44,8 +44,15 @@ const EnvSchema = z.object({
    * MUST match the plan price configured in the Partner dashboard. If you
    * change pricing there, change it here too — nothing enforces agreement
    * because the pre-subscription state has no API to check against.
+   *
+   * Stored as a bare number plus a currency code, NOT as a formatted "$30"
+   * string. Two reasons: a currency symbol baked into the value can't be
+   * localized, and — more immediately — a literal `$` in an env value gets
+   * eaten by shell and docker-compose interpolation somewhere between here and
+   * the container, which turns the paywall price into an empty string.
    */
-  SWIFTCART_DISPLAY_PRICE: z.string().default('$30'),
+  SWIFTCART_DISPLAY_AMOUNT: z.coerce.number().positive().default(30),
+  SWIFTCART_DISPLAY_CURRENCY: z.string().length(3).default('USD'),
   SWIFTCART_DISPLAY_INTERVAL: z.string().default('month'),
 
   /**
@@ -82,7 +89,8 @@ const BUILD_STUB: Env = {
   DATABASE_URL: 'postgresql://stub:stub@localhost:5432/stub',
   SESSION_SECRET: '0'.repeat(64),
   SHOPIFY_APP_HANDLE: 'swiftcart',
-  SWIFTCART_DISPLAY_PRICE: '$30',
+  SWIFTCART_DISPLAY_AMOUNT: 30,
+  SWIFTCART_DISPLAY_CURRENCY: 'USD',
   SWIFTCART_DISPLAY_INTERVAL: 'month',
   SWIFTCART_PLAN_NAME: 'SwiftCart Pro',
   SUPPORT_EMAIL: 'support@build.invalid',
