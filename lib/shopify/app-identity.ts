@@ -23,7 +23,7 @@
  * literal type, TypeScript narrows the placeholder comparison below to `never`
  * and the guard stops compiling the moment a real ID is pasted in.
  */
-export const APP_CLIENT_ID: string = 'REPLACE_WITH_CLIENT_ID';
+export const APP_CLIENT_ID: string = 'b933b83ab9f7c6c531cf0859d40f247d';
 
 /** Host portion of `application_url` in shopify.app.toml (no scheme, no path). */
 export const APP_HOST = 'swiftcart.live';

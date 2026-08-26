@@ -1,11 +1,13 @@
 # SwiftCart — Shopify app configuration
 # https://shopify.dev/docs/apps/tools/cli/configuration
 #
-# client_id is a PLACEHOLDER until the app is created in the Partner dashboard.
-# When you have the real one, update it here AND in lib/shopify/app-identity.ts
-# (the /api/health probe compares the two and fails a deploy if they disagree).
+# client_id must stay in agreement with lib/shopify/app-identity.ts and the
+# SHOPIFY_API_KEY in the deployed environment — /api/health/strict compares all
+# three and returns 503 on a mismatch, which fails the deploy and rolls it back.
+# That is deliberate: a container pointed at the wrong app authenticates nobody
+# and shows merchants a blank embedded screen with nothing in the logs.
 
-client_id = "REPLACE_WITH_CLIENT_ID"
+client_id = "b933b83ab9f7c6c531cf0859d40f247d"
 name = "SwiftCart"
 handle = "swiftcart"
 application_url = "https://swiftcart.live"
