@@ -9,11 +9,11 @@ export const dynamic = 'force-dynamic';
 /**
  * Storefront entitlement check — the FALLBACK path.
  *
- * The theme extension reads `shop.metafields.swiftcart.plan` first and only
- * calls this when that comes back blank: a fresh install, or a store where the
- * metafield definition could not be created. Keeping the metafield as the
- * primary path is the whole point (see lib/shopify/metafields.ts) — this route
- * exists so a store in that window degrades to "slower" instead of "broken".
+ * The theme extension reads `app.metafields.swiftcart.plan` first and only
+ * calls this when that comes back blank — a fresh install whose metafield write
+ * hasn't landed yet. Keeping the metafield as the primary path is the whole
+ * point (see lib/shopify/metafields.ts); this route exists so a store in that
+ * window degrades to "slower" instead of "broken".
  *
  * Reached at `https://{shop}/apps/swiftcart/status`, which Shopify signs and
  * proxies here.

@@ -28,8 +28,14 @@ export const APP_CLIENT_ID: string = 'b933b83ab9f7c6c531cf0859d40f247d';
 /** Host portion of `application_url` in shopify.app.toml (no scheme, no path). */
 export const APP_HOST = 'swiftcart.live';
 
-/** Matches `access_scopes.scopes` in shopify.app.toml. Order-insensitive. */
-export const APP_SCOPES = 'write_metafields';
+/**
+ * Matches `access_scopes.scopes` in shopify.app.toml. Order-insensitive.
+ *
+ * Empty on purpose — SwiftCart requests no Admin API permissions. If this ever
+ * becomes non-empty, the merchant starts seeing a permission prompt at install,
+ * so a change here should be a deliberate decision rather than a side effect.
+ */
+export const APP_SCOPES = '';
 
 function normalizeScopes(raw: string): string {
   return raw

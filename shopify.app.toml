@@ -9,24 +9,34 @@
 
 client_id = "b933b83ab9f7c6c531cf0859d40f247d"
 name = "SwiftCart"
-handle = "swiftcart"
+# App handles are globally unique across Shopify, and plain "swiftcart" is
+# already taken — the deploy is rejected with "App handle must be unique".
+# This handle is user-visible: it addresses the hosted plan page at
+# /store/:store/charges/:app_handle/pricing_plans, so it must also match
+# SHOPIFY_APP_HANDLE in the environment.
+handle = "swiftcart-live"
 application_url = "https://swiftcart.live"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = false
-include_config_on_deploy = true
 
 [access_scopes]
-# Deliberately minimal. The floating cart bar is rendered entirely by the theme
-# app extension from Liquid + the Ajax Cart API, so it needs no product, order
-# or cart-transform access. The single scope is for the shop metafield that
-# mirrors subscription state to the storefront (lib/shopify/metafields.ts).
+# EMPTY, and that is correct — SwiftCart requests no Admin API permissions at
+# all. The merchant sees no permission prompt at install.
 #
-# Every extra scope is another thing App Store review asks you to justify, and
-# another permission prompt the merchant sees at install. Do not widen this
-# without a concrete need.
-scopes = "write_metafields"
+# The cart bar renders entirely from Liquid and the Ajax Cart API, so it needs
+# no product, order or cart-transform access. The only thing the app writes is
+# its entitlement flag, and that is an app-data metafield on the app's own
+# installation, which needs no scope (lib/shopify/metafields.ts explains why).
+#
+# This previously read "write_metafields". That scope does not exist — Shopify
+# rejects it at deploy with "These scopes are invalid" — because metafield
+# access is granted through the owner resource, not by a metafield scope.
+#
+# Do not add a scope here without a concrete need: every one is a permission
+# the merchant must accept and a question App Store review will ask.
+scopes = ""
 optional_scopes = [ ]
 use_legacy_install_flow = false
 

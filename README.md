@@ -42,9 +42,11 @@ extensions/
 This is the part worth understanding before changing anything.
 
 1. `lib/entitlement.ts` reads the merchant's real subscription from the Admin API — on every app open, and from the `app_subscriptions/update` webhook.
-2. It writes the result to `Store.entitlement` **and** mirrors it into the shop metafield `swiftcart.plan`.
-3. The theme extension checks that metafield **in Liquid**. Not subscribed → the block outputs nothing at all: no markup, no CSS, no JS.
+2. It writes the result to `Store.entitlement` **and** mirrors it into an app-data metafield under the reserved `$app:swiftcart` namespace, owned by the app's own installation.
+3. The theme extension checks that metafield **in Liquid** as `app.metafields.swiftcart.plan`. Not subscribed → the block outputs nothing at all: no markup, no CSS, no JS.
 4. Only when the metafield is unreadable (fresh install) does the storefront fall back to one signed app-proxy call, cached in `sessionStorage`.
+
+The metafield is owned by the **app installation**, not the shop — that's what makes the whole feature possible with zero access scopes. See the Scopes section below.
 
 The result is that the common path costs the storefront **zero** network requests to answer "is this store paid".
 
@@ -86,9 +88,13 @@ Deployment credentials, infrastructure IDs and the DNS cutover runbook live in `
 
 ## Scopes
 
-`write_metafields`, and nothing else.
+**None.** SwiftCart requests no Admin API permissions, so the merchant sees no permission prompt at install.
 
-The extension renders from Liquid and the Ajax Cart API, so it needs no product, order or cart access. The single scope is for the entitlement metafield. Adding scopes means more App Store review questions and a scarier install prompt — don't widen it without a concrete need.
+The extension renders from Liquid and the Ajax Cart API, so it needs no product, order or cart access. The only thing the app writes is its entitlement flag, and that is an **app-data metafield on the app's own installation** — an app always has access to its own installation, so no scope is involved.
+
+This originally requested `write_metafields`. That scope does not exist; Shopify rejects it at deploy with *"These scopes are invalid"*, because metafield access is granted through the owner resource rather than by a metafield scope. Writing the flag to a *shop*-owned metafield would have required a real scope for no benefit, so the owner moved to the app installation instead.
+
+Don't add a scope without a concrete need — each one is a permission the merchant must accept and a question App Store review will ask.
 
 ## Known consideration: Polaris React
 

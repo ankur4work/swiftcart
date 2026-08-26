@@ -7,7 +7,13 @@ const EnvSchema = z.object({
   SHOPIFY_API_KEY: z.string().min(1, 'SHOPIFY_API_KEY is required'),
   SHOPIFY_API_SECRET: z.string().min(1, 'SHOPIFY_API_SECRET is required'),
   SHOPIFY_APP_URL: z.string().url('SHOPIFY_APP_URL must be a valid URL'),
-  SHOPIFY_SCOPES: z.string().min(1, 'SHOPIFY_SCOPES is required'),
+  /**
+   * Comma-separated Admin API scopes. Legitimately EMPTY for SwiftCart — it
+   * requests no permissions at all (see the access_scopes note in
+   * shopify.app.toml). Hence `.default('')` rather than `.min(1)`: requiring a
+   * value here would force us to invent a scope we don't want.
+   */
+  SHOPIFY_SCOPES: z.string().default(''),
 
   DATABASE_URL: z.string().url('DATABASE_URL must be a valid connection string'),
 
@@ -85,7 +91,7 @@ const BUILD_STUB: Env = {
   SHOPIFY_API_KEY: 'build-time-stub',
   SHOPIFY_API_SECRET: 'build-time-stub',
   SHOPIFY_APP_URL: 'https://build-stub.invalid',
-  SHOPIFY_SCOPES: 'write_metafields',
+  SHOPIFY_SCOPES: '',
   DATABASE_URL: 'postgresql://stub:stub@localhost:5432/stub',
   SESSION_SECRET: '0'.repeat(64),
   SHOPIFY_APP_HANDLE: 'swiftcart',
